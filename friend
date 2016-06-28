@@ -1,0 +1,78 @@
+typedef struct Adj {
+  char id[10];
+  struct Adj* next;
+} Adj;
+
+typedef struct {
+  int color;
+  int parent;
+  char id[10];
+  int n, d, f;
+  Adj* first;
+  struct Vertex* next;
+} Vertex;
+void Vertex_init(Vertex* self) {
+  self->color = 0;
+  self->parent = -1;
+  strcpy(self->id, "(none)");
+  self->n = 0;
+  self->first = NULL;
+  self->next = NULL;
+  self->d = 0;
+  self->f = 0;
+  Adj* a = (Adj *)malloc(sizeof(Adj));
+  strcpy(a->id, "(none)");
+  a->next = NULL;
+  self->first = a;
+}
+void vertex_add(Vertex* first,char me[10], char friend[10]){
+    Vertex* x = first;
+    Adj* y = first->first;
+    Adj* z = y;
+    if(strcmp(x->id, "(none)")==0) {
+        strcpy(x->id, me);
+        strcpy(x->first->id, friend);
+        first->n += 1;
+    }
+    else if(strcmp(x->id, me)==0) {
+        first->n += 1;
+        for(;y!=NULL;) {
+            z = y;
+            y = y->next;
+        }
+        strcpy(z->id , friend);
+    }
+    else {
+        for(;x->next!=NULL&&strcmp(x->id, me);) {
+            x = x->next;
+        }
+        if(x->next==NULL) {
+            Vertex* a = (Vertex*)malloc(sizeof(Vertex));
+            Vertex_init(a);
+            x->next = a;
+            vertex_add(a, me, friend);
+        }
+        else {
+            vertex_add(x, me, friend);
+        }
+    }
+}
+int main(void)
+{
+    FILE* fb;
+    fb = fopen("friend.txt","rt");
+    if(fb == NULL) return 1;
+    Vertex* first;
+    first = (Vertex*)malloc(sizeof(Vertex));
+    Vertex_init(first);
+    while(1) {
+        char me[10], friend[10];
+        if(fgetc(fb)==EOF) break;
+        fscanf(fb, "%s", me);
+        fscanf(fb, "%s\n", friend);
+        vertex_add(first, me, friend);
+    }
+    printf("%s", first->first->next->id);
+    return 0;
+}
+
