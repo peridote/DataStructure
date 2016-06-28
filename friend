@@ -12,7 +12,7 @@ typedef struct {
   struct Vertex* next;
 } Vertex;
 void Vertex_init(Vertex* self) {
-  self->color = 0;
+  self->color = WHITE;
   self->parent = -1;
   strcpy(self->id, "(none)");
   self->n = 0;
@@ -33,27 +33,35 @@ void vertex_add(Vertex* first,char me[10], char friend[10]){
         strcpy(x->id, me);
         strcpy(x->first->id, friend);
         first->n += 1;
+        Adj* a = (Adj *)malloc(sizeof(Adj));
+        strcpy(a->id, "(none)");
+        a->next = NULL;
+        y->next = a;
     }
-    else if(strcmp(x->id, me)==0) {
+    else if(strcmp(x->id, me)==0&&strcmp(y->id, "(none)")!=0) {
         first->n += 1;
-        for(;y!=NULL;) {
-            z = y;
+        y=y->next;
+        for(;strcmp(y->id,"(none)")!=0;) {
             y = y->next;
         }
-        strcpy(z->id , friend);
+        strcpy(y->id , friend);
+        Adj* a = (Adj *)malloc(sizeof(Adj));
+        strcpy(a->id, "(none)");
+        a->next = NULL;
+        y->next = a;
     }
     else {
-        for(;x->next!=NULL&&strcmp(x->id, me);) {
+        for(;x->next!=NULL&&strcmp(x->id, me)!=0;) {
             x = x->next;
         }
-        if(x->next==NULL) {
+        if (strcmp(x->id, me)==0){
+            vertex_add(x, me, friend);
+        }
+        else if(x->next==NULL) {
             Vertex* a = (Vertex*)malloc(sizeof(Vertex));
             Vertex_init(a);
             x->next = a;
             vertex_add(a, me, friend);
-        }
-        else {
-            vertex_add(x, me, friend);
         }
     }
 }
@@ -68,11 +76,14 @@ int main(void)
     while(1) {
         char me[10], friend[10];
         if(fgetc(fb)==EOF) break;
+        fseek(fb, -1, SEEK_CUR);
         fscanf(fb, "%s", me);
         fscanf(fb, "%s\n", friend);
         vertex_add(first, me, friend);
     }
-    printf("%s", first->first->next->id);
+    Vertex* a;
+    a=first->next;
+    printf("%d", a->n);
     return 0;
 }
 
