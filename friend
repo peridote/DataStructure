@@ -82,8 +82,17 @@ int main(void)
         vertex_add(first, me, friend);
     }
     Vertex* a;
-    a=first->next;
-    printf("%d", a->n);
+    a=first;
+    int i, friendn=0, maxFriend, minFriend;
+    maxFriend = a->n;
+    minFriend = a->n;
+    for(i=1;a->next!=NULL;i++) {
+        friendn += a->n;
+        if(a->n>maxFriend) maxFriend = a->n;
+        if(a->n<minFriend) minFriend = a->n;
+        a = a->next;
+    }
+    printf("%f %d %d", (double)friendn/i, minFriend, maxFriend);
     return 0;
 }
 
