@@ -1,0 +1,53 @@
+void Interface() {
+    printf("0. Read data files\n");
+    printf("1. display statistics\n");
+    printf("2. Top 5 most tweeted words\n");
+    printf("3. Top 5 most tweeted users\n");
+    printf("4. Find users who tweeted a word\n");
+    printf("5. Find all people who are friends of above users\n");
+    printf("6. Delete all mentions of a word\n");
+    printf("7. Delete all users who mentioned a word\n");
+    printf("8. Find strongly connected components\n");
+    printf("9. Find shortest path from a given user\n");
+    printf("99. Quit\n")
+    printf("Select Menu: ")
+}
+int main(void)
+{
+    FILE* fb;
+    boolean programOn = true;
+    fb = fopen("xas.txt","rt");
+    if(fb == NULL) return 1;
+    Vertex* first;
+    first = (Vertex*)malloc(sizeof(Vertex));
+    Vertex_init(first);
+    id_stack* stack = stack_init();
+    while(1) {
+        char me[10], friend[10];
+        if(fgetc(fb)==EOF) break;
+        fseek(fb, -1, SEEK_CUR);
+        fscanf(fb, "%s", me);
+        fscanf(fb, "%s\n", friend);
+        vertex_add(first, me, friend);
+    }
+    while(programOn){
+        int i;
+        Interface();
+        scanf("%d",&i);
+        switch(i) {
+        case 1: readData(first); break;
+        case 2: showStat(first); break;
+        case 3: break;
+        case 4: break;
+        case 5: break;
+        case 6: break;
+        case 7: break;
+        case 8: strongComponentTop5(first, stack); break;
+        case 9: break;
+        case 99: programOn = false; break;
+        case default: "Wrong number select\n" break;
+        }
+    }
+    fclose(fb);
+    return 0;
+}
