@@ -25,6 +25,36 @@ void Vertex_init(Vertex* self) {
   a->next = NULL;
   self->first = a;
 }
+typedef struct id_stack{
+    char id[10];
+    struct id_stack* last;
+}id_stack;
+
+
+id_stack* stack_init() {
+    id_stack* stack = (id_stack*)malloc(sizeof(id_stack));
+    strcpy(stack->id, "empty");
+    stack->last = NULL;
+    return stack;
+}
+void push(char id[10], id_stack* stack) {
+    id_stack* temp = (id_stack*)malloc(sizeof(id_stack));
+    strcpy(temp->id, stack->id);
+    temp->last = stack->last;
+    strcpy(stack->id, id);
+    stack->last=temp;
+    }
+char* pop(id_stack* stack) {
+    char* temp = (char*)malloc(sizeof(char));
+    strcpy(temp, stack->id);
+    strcpy(stack->id, stack->last->id);
+    stack->last = stack->last->last;
+    return temp;
+}
+int is_empty(id_stack* stack) {
+    if(strcmp(stack->id, "empty")==0) return 1;
+    else return 0;
+}
 void vertex_add(Vertex* first,char me[10], char friend[10]){
     Vertex* x = first;
     Adj* y = first->first;
@@ -65,6 +95,26 @@ void vertex_add(Vertex* first,char me[10], char friend[10]){
         }
     }
 }
+void dfs(Vertex* first, Vertex* list, id_stack* stack) {
+    Vertex* x;
+    x = first;
+    if(x->color == WHITE) {
+        x->color = GRAY;
+        Adj* a;
+        a = first->first;
+        x = list;
+        while(a->next!=NULL){
+            x = list->next;
+        while(x!=NULL&&strcmp(x->id, a->id)!=0) {
+            x=x->next;
+        }
+        if(x!=NULL&&x->color==WHITE) dfs(x, list, stack);
+        else a=a->next;
+        }
+        first->color = BLACK;
+        push(first->id, stack);
+    }
+}
 int main(void)
 {
     FILE* fb;
@@ -73,6 +123,7 @@ int main(void)
     Vertex* first;
     first = (Vertex*)malloc(sizeof(Vertex));
     Vertex_init(first);
+    id_stack* stack = stack_init();
     while(1) {
         char me[10], friend[10];
         if(fgetc(fb)==EOF) break;
@@ -81,6 +132,10 @@ int main(void)
         fscanf(fb, "%s\n", friend);
         vertex_add(first, me, friend);
     }
+    strongComponent(first, stack);
+    return 0;
+}
+void showStat(Vertex* first) {
     Vertex* a;
     a=first;
     int i, friendn=0, maxFriend, minFriend;
@@ -92,7 +147,85 @@ int main(void)
         if(a->n<minFriend) minFriend = a->n;
         a = a->next;
     }
-    printf("%f %d %d", (double)friendn/i, minFriend, maxFriend);
-    return 0;
+    printf("Average number of friends: %f\n", (double)friendn/i);
+    printf("Minimum friends: %d\n", minFriend);
+    printf("Maximum number of friends: %d\n", maxFriend);
+    printf("\n");
 }
+void readData(Vertex* first) {
+    Vertex* a;
+    a=first;
+    int i, friendn=0;
+    for(i=1;a->next!=NULL;i++) {
+        friendn += a->n;
+        a = a->next;
+    }
 
+}
+void findFriend(Vertex* first, char id[10]) {
+    printf("%s: ", id);
+    Vertex* a;
+    Adj* b;
+    a=first;
+    while(1){
+        if(strcmp(a->id, id)==0) break;
+        else a = a->next;
+    }
+    b = a->first;
+    for(;strcmp(b->next,"(none)")!=0;) {
+        printf("%s, ", b->id);
+        b = b->next;
+    }
+    printf("%s\n", b->id);
+}
+int hasFriend(Vertex* first, char me[10], char friend[10]) {
+    Vertex* a;
+    a=first;
+    while(a!=NULL&&strcmp(a->id, me)!=0) {
+        a = a->next;
+    }
+    if(a==NULL) return 0;
+    Adj* b;
+    b=a->first;
+    while(strcmp(b->id,"(none)")!=0&&strcmp(b->id, friend)!=0) {
+        b=b->next;
+    }
+    if(strcmp(b->id,"(none)")==0) return 0;
+    else return 1;
+}
+void strongComponent(Vertex* first, id_stack* stack) {
+    dfs(first, first, stack);
+    Vertex* a = first;
+    a=a->next;
+    while(a!=NULL) {
+        if(a->color==WHITE) dfs(a, first, stack);
+        a = a->next;
+    }
+    printf("Strongly connected components: ");
+    char vertexId[10], vertexRoute[10];
+    char* temp;
+    temp = pop(stack);
+    strcpy(vertexId, temp);
+    free(temp);
+    while(!is_empty(stack)) {
+    temp = pop(stack);
+    strcpy(vertexRoute, temp);
+    free(temp);
+    printf("[%s",vertexId);
+        while(!is_empty(stack)){
+            if(hasFriend(first, vertexRoute, vertexId)==1) {
+                printf(", %s", vertexRoute);
+                strcpy(vertexId, vertexRoute);
+                temp = pop(stack);
+                strcpy(vertexRoute, temp);
+                free(temp);
+            }
+            else {
+                break;
+            }
+        }
+        printf("] ");
+        if(is_empty(stack)&&!hasFriend(first, vertexRoute, vertexId)) printf("[%s]",vertexRoute);
+        strcpy(vertexId, vertexRoute);
+    }
+}
