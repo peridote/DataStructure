@@ -1,3 +1,7 @@
+Manual
+사용 언어: C
+사용 컴파일러: 코드블럭(Code::Blocks)
+
 실행시 Manual
 
 0. 코드가 있는 폴더에 user.txt, friend.txt, word.txt가 있어야 한다.
