@@ -8,4 +8,3 @@ Manual
 1. 실행시 interface가 나오고 목록의 해당 숫자를 입력 하면 작동한다.
 2. 4,5,6,7은 순서대로 실행되어야 한다.
 3. 8번 strongly connected components는 모든 강연결 요소 를 출력한다.
-4. 9번 shortest path에서 a->b의 weight는 b의 friend 수
