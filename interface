@@ -9,8 +9,8 @@ void Interface() {
     printf("7. Delete all users who mentioned a word\n");
     printf("8. Find strongly connected components\n");
     printf("9. Find shortest path from a given user\n");
-    printf("99. Quit\n")
-    printf("Select Menu: ")
+    printf("99. Quit\n");
+    printf("Select Menu: ");
 }
 int main(void)
 {
