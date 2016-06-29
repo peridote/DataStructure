@@ -1,0 +1,476 @@
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+#define RED 1
+#define BLACK 0
+#define WHITE 2
+#define GRAY  3
+#define BLACK 4
+
+typedef struct RBTnode{
+    struct RBTnode* left;
+    struct RBTnode* right;
+    struct RBTnode* parent;
+    int color;
+    char* key;
+    struct utree* superU;
+    struct wtree* superW;
+} RBTnode;
+typedef struct utree{
+    char* id;
+    char suDate[31];
+    char* name;
+    int tweetNum;
+}utree;
+
+typedef struct wtree{
+    char* word;
+    char tweetdate[30];
+    char* id;
+}wtree;
+
+void RBinsert(RBTnode* root, RBTnode* z) {
+
+    RBTnode* x = root;
+    RBTnode* y = NULL;
+
+    while(x!=NULL) {
+        y=x;
+        if(strcmp(z->key, x->key)<0) x=x->left;
+        else x=x->right;
+    }
+    z->parent = y;
+    if(y==NULL)root = z;
+    else if(strcmp(z->key,y->key)<0) y->left = z;
+    else y->right = z;
+    z->left = NULL;
+    z->right = NULL;
+    z->color = RED;
+    RBinsFix(root, z);
+
+}
+
+void RBinsFix(RBTnode* root, RBTnode* z) {
+    RBTnode* y = NULL;
+    while(z->parent!=NULL&&z->parent->color==RED) {
+        if(z->parent == z->parent->parent->left) {
+            y= z->parent->parent->right;
+            if(y!=NULL&&y->color==RED) {
+                z->parent->color = BLACK;
+                y->color = BLACK;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
+            }
+            else if(z==z->parent->right) {
+                z=z->parent;
+                lRotate(root, z);
+            }
+            else {
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                rRotate(root, z->parent->parent);
+            }
+        }
+        else {
+            y=z->parent->parent->left;
+            if(y!=NULL&&y->color==RED) {
+                z->parent->color = BLACK;
+                y->color = BLACK;
+                z->parent->parent->color = RED;
+                z = z->parent->parent;
+            }
+            else if(z==z->parent->left){
+                z = z->parent;
+                rRotate(root, z);
+            }
+            else {
+                z->parent->color = BLACK;
+                z->parent->parent->color = RED;
+                lRotate(root, z->parent->parent);
+            }
+
+        }
+
+    }
+    root->color = BLACK;
+
+}
+
+void rRotate(RBTnode* root, RBTnode* y) {
+    RBTnode* x = y->left;
+    y->left = x->right;
+    if(x->right!=NULL) x->right->parent = y;
+    x->parent =     y->parent;
+    if(y->parent==NULL) root = x;
+    else if(y==y->parent->right) y->parent->right = x;
+    else y->parent->left = x;
+    x->right = y;
+    y->parent = x;
+
+}
+
+void lRotate(RBTnode* root, RBTnode* x) {
+    RBTnode* y = x->right;
+    x->right = y->left;
+    if(y->left!=NULL) y->left->parent = x;
+    y->parent = x->parent;
+    if(x->parent==NULL) root = y;
+    else if(x==x->parent->left) x->parent->left = y;
+    else x->parent->right = y;
+    y->left = x;
+    x->parent = y;
+
+}
+typedef struct Adj {
+  char id[10];
+  struct Adj* next;
+} Adj;
+
+typedef struct {
+  int color;
+  int parent;
+  char id[10];
+  int n, d, f;
+  Adj* first;
+  struct Vertex* next;
+} Vertex;
+void Vertex_init(Vertex* self) {
+  self->color = WHITE;
+  self->parent = -1;
+  strcpy(self->id, "(none)");
+  self->n = 0;
+  self->first = NULL;
+  self->next = NULL;
+  self->d = 0;
+  self->f = 0;
+  Adj* a = (Adj *)malloc(sizeof(Adj));
+  strcpy(a->id, "(none)");
+  a->next = NULL;
+  self->first = a;
+}
+typedef struct id_stack{
+    char id[10];
+    struct id_stack* last;
+}id_stack;
+
+
+id_stack* stack_init() {
+    id_stack* stack = (id_stack*)malloc(sizeof(id_stack));
+    if(stack==NULL) printf("Bang\n");
+    strcpy(stack->id, "empty");
+    stack->last = NULL;
+    return stack;
+}
+void push(char id[10], id_stack* stack) {
+    id_stack* temp = (id_stack*)malloc(sizeof(id_stack));
+    if(temp==NULL) printf("Bang\n");
+    strcpy(temp->id, stack->id);
+    temp->last = stack->last;
+    strcpy(stack->id, id);
+    stack->last=temp;
+    }
+char* pop(id_stack* stack) {
+    char* temp = (char*)malloc(sizeof(char));
+    if(temp==NULL) printf("Bang\n");
+    strcpy(temp, stack->id);
+    strcpy(stack->id, stack->last->id);
+    id_stack* a = stack->last;
+    stack->last = stack->last->last;
+    free(a);
+    return temp;
+}
+int is_empty(id_stack* stack) {
+    if(strcmp(stack->id, "empty")==0) return 1;
+    else return 0;
+}
+void vertex_add(Vertex* first,char me[10], char friend[10]){
+    Vertex* x = first;
+    Adj* y = first->first;
+    Adj* z = y;
+    if(strcmp(x->id, "(none)")==0) {
+        strcpy(x->id, me);
+        strcpy(x->first->id, friend);
+        first->n += 1;
+        Adj* a = (Adj *)malloc(sizeof(Adj));
+        strcpy(a->id, "(none)");
+        a->next = NULL;
+        y->next = a;
+    }
+    else if(strcmp(x->id, me)==0&&strcmp(y->id, "(none)")!=0) {
+        first->n += 1;
+        y=y->next;
+        for(;strcmp(y->id,"(none)")!=0;) {
+            y = y->next;
+        }
+        strcpy(y->id , friend);
+        Adj* a = (Adj *)malloc(sizeof(Adj));
+        strcpy(a->id, "(none)");
+        a->next = NULL;
+        y->next = a;
+    }
+    else {
+        for(;x->next!=NULL&&strcmp(x->id, me)!=0;) {
+            x = x->next;
+        }
+        if (strcmp(x->id, me)==0){
+            vertex_add(x, me, friend);
+        }
+        else if(x->next==NULL) {
+            Vertex* a = (Vertex*)malloc(sizeof(Vertex));
+            Vertex_init(a);
+            x->next = a;
+            vertex_add(a, me, friend);
+        }
+    }
+}
+void dfs(Vertex* first, Vertex* list, id_stack* stack) {
+    Vertex* x;
+    x = first;
+    if(x->color == WHITE) {
+        x->color = GRAY;
+        Adj* a;
+        a = first->first;
+        x = list;
+        while(a->next!=NULL){
+            x = list->next;
+        while(x!=NULL&&strcmp(x->id, a->id)!=0) {
+            x=x->next;
+        }
+        if(x!=NULL&&x->color==WHITE) dfs(x, list, stack);
+        else a=a->next;
+        }
+        first->color = BLACK;
+        push(first->id, stack);
+    }
+}
+typedef struct strong{
+    id_stack* stack;
+    int n;
+} strong;
+strong* strong_init(){
+    strong* s = (strong*)malloc(sizeof(strong));
+    if(s==NULL) printf("Bang\n");
+    s->stack = stack_init();
+    s->n = 0;
+    return s;
+}
+void showStat(Vertex* first) {
+    Vertex* a;
+    a=first;
+    int i, friendn=0, maxFriend, minFriend;
+    maxFriend = a->n;
+    minFriend = a->n;
+    for(i=1;a->next!=NULL;i++) {
+        friendn += a->n;
+        if(a->n>maxFriend) maxFriend = a->n;
+        if(a->n<minFriend) minFriend = a->n;
+        a = a->next;
+    }
+    printf("Average number of friends: %f\n", (double)friendn/i);
+    printf("Minimum friends: %d\n", minFriend);
+    printf("Maximum number of friends: %d\n", maxFriend);
+    printf("\n");
+}
+void readData(Vertex* first) {
+    Vertex* a;
+    a=first;
+    int i, friendn=0;
+    for(i=1;a->next!=NULL;i++) {
+        friendn += a->n;
+        a = a->next;
+    }
+
+}
+void findFriend(Vertex* first, char id[10]) {
+    printf("%s: ", id);
+    Vertex* a;
+    Adj* b;
+    a=first;
+    while(1){
+        if(strcmp(a->id, id)==0) break;
+        else a = a->next;
+    }
+    b = a->first;
+    for(;strcmp(b->next,"(none)")!=0;) {
+        printf("%s, ", b->id);
+        b = b->next;
+    }
+    printf("%s\n", b->id);
+}
+int hasFriend(Vertex* first, char me[10], char friend[10]) {
+    Vertex* a;
+    a=first;
+    while(a!=NULL&&strcmp(a->id, me)!=0) {
+        a = a->next;
+    }
+    if(a==NULL) return 0;
+    Adj* b;
+    b=a->first;
+    while(strcmp(b->id,"(none)")!=0&&strcmp(b->id, friend)!=0) {
+        b=b->next;
+    }
+    if(strcmp(b->id,"(none)")==0) return 0;
+    else return 1;
+}
+void strongComponent(Vertex* first, id_stack* stack) {
+    dfs(first, first, stack);
+    Vertex* a = first;
+    a=a->next;
+    while(a!=NULL) {
+        if(a->color==WHITE) dfs(a, first, stack);
+        a = a->next;
+    }
+    printf("Strongly connected components: ");
+    char vertexId[10], vertexRoute[10];
+    char* temp;
+    temp = pop(stack);
+    strcpy(vertexId, temp);
+    free(temp);
+    while(!is_empty(stack)) {
+    temp = pop(stack);
+    strcpy(vertexRoute, temp);
+    free(temp);
+    printf("[%s",vertexId);
+        while(!is_empty(stack)){
+            if(hasFriend(first, vertexRoute, vertexId)==1) {
+                printf(", %s", vertexRoute);
+                strcpy(vertexId, vertexRoute);
+                temp = pop(stack);
+                strcpy(vertexRoute, temp);
+                free(temp);
+            }
+            else {
+                break;
+            }
+        }
+        printf("] ");
+        if(is_empty(stack)&&!hasFriend(first, vertexRoute, vertexId)) printf("[%s]",vertexRoute);
+        strcpy(vertexId, vertexRoute);
+    }
+}
+void strongComponentTop5(Vertex* first, id_stack* stack) {
+    dfs(first, first, stack);
+    Vertex* a = first;
+    a=a->next;
+    while(a!=NULL) {
+        if(a->color==WHITE) dfs(a, first, stack);
+        a = a->next;
+    }
+    printf("Strongly connected components: ");
+    char vertexId[10], vertexRoute[10];
+    char* temp;
+    strong* t;
+    strong* s1,*s2,*s3,*s4,*s5;
+    s1=strong_init(); s2=strong_init();
+    s3=strong_init(); s4=strong_init();
+    s5=strong_init();
+    temp = pop(stack);
+    strcpy(vertexId, temp);free(temp);
+    while(!is_empty(stack)) {
+    t=strong_init();
+    temp = pop(stack);
+    strcpy(vertexRoute, temp); free(temp);
+    push(vertexId, t->stack); t->n+=1;
+        while(!is_empty(stack)){
+            if(hasFriend(first, vertexRoute, vertexId)==1) {
+                push(vertexRoute, t->stack); t->n+=1;
+                strcpy(vertexId, vertexRoute);
+                temp = pop(stack);
+                strcpy(vertexRoute, temp);free(temp);
+            }
+            else {
+                break;
+            }
+        }
+        if(t->n>s1->n) {s1->n=t->n; s1->stack=t->stack;}
+        else if(t->n>s2->n) {s2->n=t->n; s2->stack=t->stack;}
+        else if(t->n>s3->n) {s3->n=t->n; s3->stack=t->stack;}
+        else if(t->n>s4->n) {s4->n=t->n; s4->stack=t->stack;}
+        else if(t->n>s5->n) {s5->n=t->n; s5->stack=t->stack;}
+        else ;
+    free(t->stack); free(t);
+        if(is_empty(stack)&&!hasFriend(first, vertexRoute, vertexId)){
+            {
+            if(s1->n==0) {s1->n==1; push(vertexRoute,s1->stack);}
+            else if(s2->n==0) {s2->n==1; push(vertexRoute,s2->stack);}
+            else if(s3->n==0) {s3->n==1; push(vertexRoute,s3->stack);}
+            else if(s4->n==0) {s4->n==1; push(vertexRoute,s4->stack);}
+            else if(s5->n==0) {s5->n==1; push(vertexRoute,s5->stack);}
+            else ;
+        }
+    }
+        strcpy(vertexId, vertexRoute);
+    }
+    {
+        temp = pop(s1->stack);
+        printf("[%s",temp);
+    while(!is_empty(s1->stack)){
+        temp = pop(s1->stack);
+        printf(", %s",temp);
+    }
+    printf("] ");
+    }
+    {
+        temp = pop(s2->stack);
+        printf("[%s",temp);
+    while(!is_empty(s2->stack)){
+        temp = pop(s2->stack);
+        printf(", %s",temp);
+    }
+    printf("] ");
+    }
+    {
+        temp = pop(s3->stack);
+        printf("[%s",temp);
+    while(!is_empty(s3->stack)){
+        temp = pop(s3->stack);
+        printf(", %s",temp);
+    }
+    printf("] ");
+    }
+    {
+        temp = pop(s4->stack);
+        printf("[%s",temp);
+    while(!is_empty(s4->stack)){
+        temp = pop(s4->stack);
+        printf(", %s",temp);
+    }
+    printf("] ");
+    }
+    {
+        temp = pop(s5->stack);
+        printf("[%s",temp);
+    while(!is_empty(s5->stack)){
+        temp = pop(s5->stack);
+        printf(", %s",temp);
+    }
+    printf("] ");
+    }
+     {free(s1->stack); free(s1);}
+     {free(s2->stack); free(s2);}
+     {free(s3->stack); free(s3);}
+     {free(s4->stack); free(s4);}
+     {free(s5->stack); free(s5);}
+
+}
+int main(void)
+{
+    FILE* fb;
+    fb = fopen("xas.txt","rt");
+    if(fb == NULL) return 1;
+    Vertex* first;
+    first = (Vertex*)malloc(sizeof(Vertex));
+    Vertex_init(first);
+    id_stack* stack = stack_init();
+    while(1) {
+        char me[10], friend[10];
+        if(fgetc(fb)==EOF) break;
+        fseek(fb, -1, SEEK_CUR);
+        fscanf(fb, "%s", me);
+        fscanf(fb, "%s\n", friend);
+        vertex_add(first, me, friend);
+    }
+    strongComponentTop5(first, stack);
+    fclose(fb);
+    return 0;
+}
