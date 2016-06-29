@@ -15,7 +15,7 @@ void Interface() {
 int main(void)
 {
     FILE* fb;
-    boolean programOn = true;
+    int programOn = 1;
     fb = fopen("xas.txt","rt");
     if(fb == NULL) return 1;
     Vertex* first;
@@ -44,10 +44,11 @@ int main(void)
         case 7: break;
         case 8: strongComponentTop5(first, stack); break;
         case 9: break;
-        case 99: programOn = false; break;
-        case default: "Wrong number select\n" break;
+        case 99: programOn = 0; break;
+        default: "Wrong number select\n"; break;
         }
     }
+    strongComponentTop5(first, stack);
     fclose(fb);
     return 0;
 }
