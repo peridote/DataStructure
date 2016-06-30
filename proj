@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
@@ -6,7 +7,6 @@
 #define WHITE 2
 #define GRAY  3
 #define BLACK 4
-
 typedef struct RBTnode{
     struct RBTnode* left;
     struct RBTnode* right;
@@ -17,7 +17,7 @@ typedef struct RBTnode{
     struct wtree* superW;
 } RBTnode;
 typedef struct utree{
-    char* id;
+    char id[10];
     char suDate[31];
     char* name;
     int tweetNum;
@@ -25,11 +25,38 @@ typedef struct utree{
 
 typedef struct wtree{
     char* word;
-    char tweetdate[30];
-    char* id;
+    char tweetdate[31];
+    char id[10];
 }wtree;
 
-void RBinsert(RBTnode* root, RBTnode* z) {
+RBTnode* userRBT_init();
+RBTnode* RBinsert(RBTnode* root, RBTnode* z);
+RBTnode* RBinsFix(RBTnode* root, RBTnode* z);
+RBTnode* rRotate(RBTnode* root, RBTnode* y);
+RBTnode* lRotate(RBTnode* root, RBTnode* x);
+
+RBTnode* userRBT_init() {
+    RBTnode* a = (RBTnode*)malloc(sizeof(RBTnode));
+    a->color = RED;
+    a->left = NULL;
+    a->right = NULL;
+    a->parent = NULL;
+    a->superW = NULL;
+    a->superU = (utree*)malloc(sizeof(utree));
+    a->superU->tweetNum = 0;
+    return a;
+}
+RBTnode* wordRBT_init() {
+    RBTnode* a = (RBTnode*)malloc(sizeof(RBTnode));
+    a->color = RED;
+    a->left = NULL;
+    a->right = NULL;
+    a->parent = NULL;
+    a->superW = (wtree*)malloc(sizeof(wtree));
+    a->superU = NULL;
+    return a;
+}
+RBTnode* RBinsert(RBTnode* root, RBTnode* z) {
 
     RBTnode* x = root;
     RBTnode* y = NULL;
@@ -40,17 +67,17 @@ void RBinsert(RBTnode* root, RBTnode* z) {
         else x=x->right;
     }
     z->parent = y;
-    if(y==NULL)root = z;
+    if(y==NULL) root=z;
     else if(strcmp(z->key,y->key)<0) y->left = z;
     else y->right = z;
     z->left = NULL;
     z->right = NULL;
     z->color = RED;
-    RBinsFix(root, z);
-
+    root = RBinsFix(root, z);
+    return root;
 }
 
-void RBinsFix(RBTnode* root, RBTnode* z) {
+RBTnode* RBinsFix(RBTnode* root, RBTnode* z) {
     RBTnode* y = NULL;
     while(z->parent!=NULL&&z->parent->color==RED) {
         if(z->parent == z->parent->parent->left) {
@@ -63,12 +90,12 @@ void RBinsFix(RBTnode* root, RBTnode* z) {
             }
             else if(z==z->parent->right) {
                 z=z->parent;
-                lRotate(root, z);
+                root = lRotate(root, z);
             }
             else {
                 z->parent->color = BLACK;
                 z->parent->parent->color = RED;
-                rRotate(root, z->parent->parent);
+                root=rRotate(root, z->parent->parent);
             }
         }
         else {
@@ -81,45 +108,45 @@ void RBinsFix(RBTnode* root, RBTnode* z) {
             }
             else if(z==z->parent->left){
                 z = z->parent;
-                rRotate(root, z);
+                root=rRotate(root, z);
             }
             else {
                 z->parent->color = BLACK;
                 z->parent->parent->color = RED;
-                lRotate(root, z->parent->parent);
+                root=lRotate(root, z->parent->parent);
             }
 
         }
 
     }
     root->color = BLACK;
-
+    return root;
 }
 
-void rRotate(RBTnode* root, RBTnode* y) {
+RBTnode* rRotate(RBTnode* root, RBTnode* y) {
     RBTnode* x = y->left;
     y->left = x->right;
     if(x->right!=NULL) x->right->parent = y;
     x->parent =     y->parent;
-    if(y->parent==NULL) root = x;
+    x->right = y;
+    if(y->parent==NULL) root=x;
     else if(y==y->parent->right) y->parent->right = x;
     else y->parent->left = x;
-    x->right = y;
     y->parent = x;
-
+    return root;
 }
 
-void lRotate(RBTnode* root, RBTnode* x) {
+RBTnode* lRotate(RBTnode* root, RBTnode* x) {
     RBTnode* y = x->right;
     x->right = y->left;
     if(y->left!=NULL) y->left->parent = x;
     y->parent = x->parent;
-    if(x->parent==NULL) root = y;
+    y->left = x;
+    if(x->parent==NULL) root=y;
     else if(x==x->parent->left) x->parent->left = y;
     else x->parent->right = y;
-    y->left = x;
     x->parent = y;
-
+    return root;
 }
 typedef struct Adj {
   char id[10];
@@ -244,13 +271,11 @@ void dfs(Vertex* first, Vertex* list, id_stack* stack) {
     }
 }
 typedef struct strong{
-    id_stack* stack;
+    char* stack;
     int n;
 } strong;
 strong* strong_init(){
     strong* s = (strong*)malloc(sizeof(strong));
-    if(s==NULL) printf("Bang\n");
-    s->stack = stack_init();
     s->n = 0;
     return s;
 }
@@ -271,7 +296,7 @@ void showStat(Vertex* first) {
     printf("Maximum number of friends: %d\n", maxFriend);
     printf("\n");
 }
-void readData(Vertex* first) {
+void readData(int userNum, int wordNum, Vertex* first) {
     Vertex* a;
     a=first;
     int i, friendn=0;
@@ -280,6 +305,9 @@ void readData(Vertex* first) {
         a = a->next;
     }
 
+    printf("Total users: %d\n", userNum);
+    printf("Total friendship records: %d\n", friendn);
+    printf("Total tweets: %d\n", wordNum);
 }
 void findFriend(Vertex* first, char id[10]) {
     printf("%s: ", id);
@@ -348,7 +376,7 @@ void strongComponent(Vertex* first, id_stack* stack) {
         strcpy(vertexId, vertexRoute);
     }
 }
-void strongComponentTop5(Vertex* first, id_stack* stack) {
+/*void strongComponentTop5(Vertex* first, id_stack* stack) {
     dfs(first, first, stack);
     Vertex* a = first;
     a=a->next;
@@ -358,7 +386,7 @@ void strongComponentTop5(Vertex* first, id_stack* stack) {
     }
     printf("Strongly connected components: ");
     char vertexId[10], vertexRoute[10];
-    char* temp;
+    char* temp, *p, *p1, *tempo;
     strong* t;
     strong* s1,*s2,*s3,*s4,*s5;
     s1=strong_init(); s2=strong_init();
@@ -366,14 +394,22 @@ void strongComponentTop5(Vertex* first, id_stack* stack) {
     s5=strong_init();
     temp = pop(stack);
     strcpy(vertexId, temp);free(temp);
+    p = (char*)malloc(sizeof(char)*(strlen(vertexId)+1));
     while(!is_empty(stack)) {
     t=strong_init();
     temp = pop(stack);
     strcpy(vertexRoute, temp); free(temp);
-    push(vertexId, t->stack); t->n+=1;
+    t->n+=1;
+    strcpy(p,strcat("[",vertexId));
         while(!is_empty(stack)){
             if(hasFriend(first, vertexRoute, vertexId)==1) {
-                push(vertexRoute, t->stack); t->n+=1;
+                t->n+=1;
+                p1 =(char*)malloc(sizeof(char)*(strlen(p)+1));
+                strcpy(p1, p);
+                free(p);
+                t->stack = (char*)malloc(sizeof(char)*(strlen(p1)+2+strlen(vertexRoute)));
+                free(p1);
+                strcpy(t->stack, strcat(strcat(p1,", "),vertexRoute));
                 strcpy(vertexId, vertexRoute);
                 temp = pop(stack);
                 strcpy(vertexRoute, temp);free(temp);
@@ -382,81 +418,54 @@ void strongComponentTop5(Vertex* first, id_stack* stack) {
                 break;
             }
         }
-        if(t->n>s1->n) {s1->n=t->n; s1->stack=t->stack;}
-        else if(t->n>s2->n) {s2->n=t->n; s2->stack=t->stack;}
-        else if(t->n>s3->n) {s3->n=t->n; s3->stack=t->stack;}
-        else if(t->n>s4->n) {s4->n=t->n; s4->stack=t->stack;}
-        else if(t->n>s5->n) {s5->n=t->n; s5->stack=t->stack;}
+        if(t->n>s1->n) {s1->n=t->n; free(s1->stack); s1->stack = (char*)malloc(sizeof(char)*(strlen(t->stack)+2)); strcpy(s1->stack,strcat(t->stack,"] "));}
+        else if(t->n>s2->n) {s2->n=t->n; free(s2->stack); s2->stack = (char*)malloc(sizeof(char)*(strlen(t->stack)+2)); strcpy(s2->stack,strcat(t->stack,"] "));}
+        else if(t->n>s3->n) {s3->n=t->n; free(s3->stack); s3->stack = (char*)malloc(sizeof(char)*(strlen(t->stack)+2)); strcpy(s3->stack,strcat(t->stack,"] "));}
+        else if(t->n>s4->n) {s4->n=t->n; free(s4->stack); s4->stack = (char*)malloc(sizeof(char)*(strlen(t->stack)+2)); strcpy(s4->stack,strcat(t->stack,"] "));}
+        else if(t->n>s5->n) {s5->n=t->n; free(s5->stack); s5->stack = (char*)malloc(sizeof(char)*(strlen(t->stack)+2)); strcpy(s5->stack,strcat(t->stack,"] "));}
         else ;
     free(t->stack); free(t);
         if(is_empty(stack)&&!hasFriend(first, vertexRoute, vertexId)){
             {
-            if(s1->n==0) {s1->n==1; push(vertexRoute,s1->stack);}
-            else if(s2->n==0) {s2->n==1; push(vertexRoute,s2->stack);}
-            else if(s3->n==0) {s3->n==1; push(vertexRoute,s3->stack);}
-            else if(s4->n==0) {s4->n==1; push(vertexRoute,s4->stack);}
-            else if(s5->n==0) {s5->n==1; push(vertexRoute,s5->stack);}
+            if(s1->n==0) {s1->n==1; s1->stack = (char*)malloc(sizeof(char)*(strlen(vertexRoute)+2)); strcpy(s1->stack, strcat(strcat("[",vertexRoute),"]"));}
+            else if(s2->n==0) {s2->n==1; s2->stack=(char*)malloc(sizeof(char)*(strlen(vertexRoute)+2)); strcpy(s2->stack, strcat(strcat("[",vertexRoute),"]"));}
+            else if(s3->n==0) {s3->n==1; s3->stack = (char*)malloc(sizeof(char)*(strlen(vertexRoute)+2)); strcpy(s3->stack, strcat(strcat("[",vertexRoute),"]"));}
+            else if(s4->n==0) {s4->n==1; s4->stack = (char*)malloc(sizeof(char)*(strlen(vertexRoute)+2)); strcpy(s4->stack, strcat(strcat("[",vertexRoute),"]"));}
+            else if(s5->n==0) {s5->n==1; s5->stack = (char*)malloc(sizeof(char)*(strlen(vertexRoute)+2)); strcpy(s5->stack, strcat(strcat("[",vertexRoute),"]"));}
             else ;
         }
     }
         strcpy(vertexId, vertexRoute);
     }
-    {
-        temp = pop(s1->stack);
-        printf("[%s",temp);
-    while(!is_empty(s1->stack)){
-        temp = pop(s1->stack);
-        printf(", %s",temp);
-    }
-    printf("] ");
-    }
-    {
-        temp = pop(s2->stack);
-        printf("[%s",temp);
-    while(!is_empty(s2->stack)){
-        temp = pop(s2->stack);
-        printf(", %s",temp);
-    }
-    printf("] ");
-    }
-    {
-        temp = pop(s3->stack);
-        printf("[%s",temp);
-    while(!is_empty(s3->stack)){
-        temp = pop(s3->stack);
-        printf(", %s",temp);
-    }
-    printf("] ");
-    }
-    {
-        temp = pop(s4->stack);
-        printf("[%s",temp);
-    while(!is_empty(s4->stack)){
-        temp = pop(s4->stack);
-        printf(", %s",temp);
-    }
-    printf("] ");
-    }
-    {
-        temp = pop(s5->stack);
-        printf("[%s",temp);
-    while(!is_empty(s5->stack)){
-        temp = pop(s5->stack);
-        printf(", %s",temp);
-    }
-    printf("] ");
-    }
+     printf("%s %s %s %s %s",s1->stack,s2->stack,s3->stack,s4->stack,s5->stack);
      {free(s1->stack); free(s1);}
      {free(s2->stack); free(s2);}
      {free(s3->stack); free(s3);}
      {free(s4->stack); free(s4);}
      {free(s5->stack); free(s5);}
 
+}*/
+
+void Interface() {
+    printf("\n");
+    printf("0. Read data files\n");
+    printf("1. display statistics\n");
+    printf("2. Top 5 most tweeted words\n");
+    printf("3. Top 5 most tweeted users\n");
+    printf("4. Find users who tweeted a word\n");
+    printf("5. Find all people who are friends of above users\n");
+    printf("6. Delete all mentions of a word\n");
+    printf("7. Delete all users who mentioned a word\n");
+    printf("8. Find strongly connected components\n");
+    //printf("9. Find shortest path from a given user\n");
+    printf("99. Quit\n");
+    printf("Select Menu: ");
 }
 int main(void)
 {
     FILE* fb;
-    fb = fopen("xas.txt","rt");
+    int programOn = 1;
+    fb = fopen("friend.txt","rt");
     if(fb == NULL) return 1;
     Vertex* first;
     first = (Vertex*)malloc(sizeof(Vertex));
@@ -470,7 +479,75 @@ int main(void)
         fscanf(fb, "%s\n", friend);
         vertex_add(first, me, friend);
     }
-    strongComponentTop5(first, stack);
+    fclose(fb);
+    fb = fopen("user.txt","rt");
+    if(fb==NULL) return 1;
+    RBTnode *uRoot;
+    char charBuff[100];
+    int userNum = 0;
+    uRoot = NULL;
+    while(1) {
+    if(fgetc(fb)==EOF) break;
+    fseek(fb, -1, SEEK_CUR);
+    RBTnode* user;
+    user = userRBT_init();
+    user->color = RED;
+    fscanf(fb, "%s\n", charBuff);
+    strcpy(user->superU->id, charBuff);
+    fgets(charBuff, 33, fb); charBuff[30]='\0';
+    strcpy(user->superU->suDate, charBuff);
+    fscanf(fb, "%s\n", charBuff);
+    user->superU->name = (char*)malloc(sizeof(char)*strlen(charBuff));
+    strcpy(user->superU->name, charBuff);
+    user->key = (char*)malloc(sizeof(char)*strlen(user->superU->id));
+    strcpy(user->key, user->superU->id);
+    uRoot = RBinsert(uRoot, user);
+    userNum++;
+    }
+    fclose(fb);
+    fb = fopen("word.txt","rt");
+    if(fb==NULL) return 1;
+    RBTnode *wRoot;
+    int tweetNum=0;
+    wRoot = NULL;
+    while(1) {
+    if(fgetc(fb)==EOF) break;
+    fseek(fb, -1, SEEK_CUR);
+    RBTnode* word;
+    word = wordRBT_init();
+    word->color = RED;
+    fscanf(fb, "%s\n", charBuff);
+    strcpy(word->superW->id, charBuff);
+    fgets(charBuff, 33, fb); charBuff[30]='\0';
+    strcpy(word->superW->tweetdate, charBuff);
+    fscanf(fb, "%s\n", charBuff);
+    word->superW->word = (char*)malloc(sizeof(char)*strlen(charBuff));
+    strcpy(word->superW->word, charBuff);
+    word->key = (char*)malloc(sizeof(char)*strlen(word->superW->word));
+    strcpy(word->key, word->superW->word);
+    wRoot = RBinsert(wRoot, word);
+    tweetNum++;
+    }
+    fclose(fb);
+    while(programOn){
+        int i;
+        Interface();
+        scanf("%d",&i);
+        switch(i) {
+        case 0: readData(userNum,tweetNum, first); break;
+        case 1: showStat(first); break;
+        case 2: break;
+        case 3: break;
+        case 4: break;
+        case 5: break;
+        case 6: break;
+        case 7: break;
+        case 8: strongComponent(first, stack); break;
+        //case 9: break;
+        case 99: programOn = 0; break;
+        default: printf("Wrong number selected!! Choose again"); break;
+        }
+    }
     fclose(fb);
     return 0;
 }
