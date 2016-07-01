@@ -1,4 +1,4 @@
-#include <stdio.h>
+##include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
@@ -79,10 +79,12 @@ RBTnode* RBinsert(RBTnode* root, RBTnode* z) {
         if(strcmp(z->key, x->key)<0) x=x->left;
         else if(strcmp(z->key, x->key)==0) {
                 Adj* k = x->superW->idList;
+                while(k->next!=NULL){
+                    if(strcmp(k->id,z->superW->idList->id)==0) return root;
+                    k=k->next;
+                }
                 Adj* a = (Adj*)malloc(sizeof(Adj));
                 a->next=NULL;
-                while(k->next!=NULL)
-                    k=k->next;
                 strcpy(a->id, z->superW->idList->id);
                 k->next = a;
                 return root;
@@ -504,7 +506,14 @@ void top5TweetedWords(int words[5], char tweetedWords[5][100], RBTnode* wroot) {
     else ;
 
 }
-void FindTweetedUsers() {
+Adj* FindTweetedUsers(char word[100], RBTnode* wroot) {
+    RBTnode* x = wroot;
+    while(x!=NULL) {
+        if(strcmp(x->superW->word, word)==0) break;
+        else if(strcmp(x->superW->word, word)<0) x=x->right;
+        else x=x->left;
+    }
+    return x->superW->idList;
 }
 void Interface() {
     printf("\n");
@@ -590,10 +599,13 @@ int main(void)
     ur->superU->tweetNum += 1;
     }
     fclose(fb);
+
+    Adj* idList;
     while(programOn){
         int i;
         int users[5], words[5];
         char usersid[5][10], tweetedWords[5][100];
+        char word[100];
         for(i=0;i<5;i++) {users[i]=0; words[i]=0;}
         Interface();
         scanf("%d",&i);
@@ -603,7 +615,18 @@ int main(void)
         case 1: showStat(first); break;
         case 2: top5TweetedWords(words, tweetedWords, wRoot); printf("Top 5 most tweeted words: %s %s %s %s %s\n", tweetedWords[0], tweetedWords[1], tweetedWords[2], tweetedWords[3], tweetedWords[4]); break;
         case 3: top5TweetedUsers(users, usersid, uRoot); printf("Top 5 most tweeted users: %s %s %s %s %s\n",usersid[0],usersid[1],usersid[2],usersid[3],usersid[4]); break;
-        case 4: break;
+        case 4: printf("What word?: "); scanf("%s", word); idList = FindTweetedUsers(word,wRoot);
+         if(idList==NULL) printf("There's no word like that\n");
+         else {
+            printf("Users who tweeted '%s':", word);
+            Adj* a = idList;
+            while(a!=NULL) {
+                printf(" %s",a->id);
+                a=a->next;
+            }
+            printf("\n");
+         }
+            break;
         case 5: break;
         case 6: break;
         case 7: break;
