@@ -1,12 +1,11 @@
-##include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
-#define RED 1
-#define BLACK 0
+#define RED 0
+#define BLACK 1
 #define WHITE 2
 #define GRAY  3
-#define BLACK 4
 typedef struct RBTnode{
     struct RBTnode* left;
     struct RBTnode* right;
@@ -45,6 +44,7 @@ RBTnode* RBinsert(RBTnode* root, RBTnode* z);
 RBTnode* RBinsFix(RBTnode* root, RBTnode* z);
 RBTnode* rRotate(RBTnode* root, RBTnode* y);
 RBTnode* lRotate(RBTnode* root, RBTnode* x);
+RBTnode* RBdelFix(RBTnode* root, RBTnode* x);
 
 RBTnode* userRBT_init() {
     RBTnode* a = (RBTnode*)malloc(sizeof(RBTnode));
@@ -173,7 +173,107 @@ RBTnode* lRotate(RBTnode* root, RBTnode* x) {
     x->parent = y;
     return root;
 }
-
+RBTnode* RBtransplant(RBTnode* root, RBTnode* u, RBTnode* v) {
+    if(u->parent==NULL) root = v;
+    else if(u==u->parent->left) u->parent->left=v;
+    else u->parent->right=v;
+    if(v!=NULL) v->parent=u->parent;
+}
+RBTnode* RBminimum(RBTnode* root) {
+    RBTnode* x = root;
+    RBTnode* y = NULL;
+    while(x!=NULL) {
+        y=x;
+        x=x->left;
+    }
+    return y;
+}
+RBTnode* RBdelete(RBTnode* root, RBTnode* z) {
+    RBTnode* y = z;
+    RBTnode* x = NULL;
+    int yOriginColor = y->color;
+    if(z->left==NULL) {
+        x=z->right;
+        root = RBtransplant(root, z, z->right);
+    }
+    else if(z->right==NULL) {
+        x=z->left;
+        root = RBtransplant(root, z, z->left);
+    }
+    else {
+        y = RBminimum(z->right);
+        yOriginColor = y->color;
+        x = y->right;
+        if(y->parent==z)
+            x->parent=y;
+        else {
+            root = RBtransplant(root,y,y->right);
+            y->right = z->right;
+            y->right->parent = y;
+        }
+        root = RBtransplant(root, z, y);
+        y->left=z->left;
+        y->left->parent=y;
+        y->color=z->color;
+    }
+    if(yOriginColor==BLACK&&x!=NULL)
+        root = RBdelFix(root, x);
+    return root;
+}
+RBTnode* RBdelFix(RBTnode* root, RBTnode* x) {
+    RBTnode* w;
+    while(x!=root&&x->color==BLACK) {
+        if(x==x->parent->left) {
+            w=x->parent->right;
+            if(w->color==RED){
+                w->color=BLACK;
+                x->parent->color = RED;
+                root = lRotate(root, x->parent);
+                w=x->parent->right;
+            }
+            if(w->left->color==BLACK&&w->right->color==BLACK){
+                w->color=RED;
+                x=x->parent;
+            }
+            else if(w->right->color==BLACK){
+                w->left->color=BLACK;
+                w->color=RED;
+                root=rRotate(root, w);
+                w=x->parent->right;
+            }
+            w->color=x->parent->color;
+            x->parent->color=BLACK;
+            w->right->color=BLACK;
+            lRotate(root, x->parent);
+            x=root;
+        }
+        else {
+            w=x->parent->left;
+            if(w->color==RED){
+                w->color=BLACK;
+                x->parent->color = RED;
+                root = rRotate(root, x->parent);
+                w=x->parent->left;
+            }
+            if(w->left->color==BLACK&&w->right->color==BLACK){
+                w->color=RED;
+                x=x->parent;
+            }
+            else if(w->left->color==BLACK){
+                w->right->color=BLACK;
+                w->color=RED;
+                root=lRotate(root, w);
+                w=x->parent->left;
+            }
+            w->color=x->parent->color;
+            x->parent->color=BLACK;
+            w->left->color=BLACK;
+            rRotate(root, x->parent);
+            x=root;
+        }
+    }
+    x->color=BLACK;
+}
 void Vertex_init(Vertex* self) {
   self->color = WHITE;
   self->parent = -1;
@@ -467,6 +567,15 @@ RBTnode* find_id(RBTnode* uroot, char id[10]) {
     }
     return x;
 }
+RBTnode* find_word(RBTnode* wroot, char word[100]) {
+    RBTnode* x= wroot;
+    while(x!=NULL) {
+        if(strcmp(x->superW->word,word)==0) break;
+        else if(strcmp(x->superW->word,word)>0) x=x->left;
+        else x=x->right;
+    }
+    return x;
+}
 void top5TweetedUsers(int users[5], char usersid[5][10], RBTnode* uroot) {
     RBTnode* x = uroot;
     if(x!=NULL) {
@@ -513,6 +622,7 @@ Adj* FindTweetedUsers(char word[100], RBTnode* wroot) {
         else if(strcmp(x->superW->word, word)<0) x=x->right;
         else x=x->left;
     }
+    if(x==NULL) return NULL;
     return x->superW->idList;
 }
 void Interface() {
@@ -600,12 +710,13 @@ int main(void)
     }
     fclose(fb);
 
-    Adj* idList;
+    Adj* idList=NULL;
     while(programOn){
         int i;
         int users[5], words[5];
         char usersid[5][10], tweetedWords[5][100];
         char word[100];
+        RBTnode* mentioned;
         for(i=0;i<5;i++) {users[i]=0; words[i]=0;}
         Interface();
         scanf("%d",&i);
@@ -627,9 +738,37 @@ int main(void)
             printf("\n");
          }
             break;
-        case 5: break;
-        case 6: break;
-        case 7: break;
+        case 5:
+            if(idList==NULL) printf("Error. Please do no.4 first\n");
+            else {
+            printf("Each users: friends\n");
+            Adj* a = idList;
+            while(a!=NULL) {
+            findFriend(first, a->id);
+            a = a->next;
+        }
+        }
+            break;
+        case 6:
+            if(idList==NULL) printf("Word was not specified\n");
+            else{
+            mentioned = find_word(wRoot, word);
+            RBdelete(wRoot, mentioned);
+            printf("Delete Complete\n");
+            }
+        break;
+        case 7:
+            if(idList==NULL) printf("Users were not specified\n");
+            else {
+                Adj* a = idList;
+            while(a!=NULL) {
+                mentioned = find_id(uRoot, a->id);
+                RBdelete(uRoot, mentioned);
+                a=a->next;
+            }
+            printf("Delete Complete\n");
+            }
+        break;
         case 8: strongComponent(first, stack); break;
         //case 9: break;
         case 99: programOn = 0; break;
