@@ -392,10 +392,12 @@ strong* strong_init(){
     s->n = 0;
     return s;
 }
-void showStat(Vertex* first) {
+
+void showStat(Vertex* first, int userNum, int wordNum, RBTnode* uroot) {
     Vertex* a;
     a=first;
     int i, friendn=0, maxFriend, minFriend;
+    int maxTweet,minTweet;
     maxFriend = a->n;
     minFriend = a->n;
     for(i=1;a->next!=NULL;i++) {
@@ -404,10 +406,16 @@ void showStat(Vertex* first) {
         if(a->n<minFriend) minFriend = a->n;
         a = a->next;
     }
+    maxTweet = uroot->superU->tweetNum;
+    minTweet = uroot->superU->tweetNum;
+    tweetNumMaxMin(uroot, &maxTweet, &minTweet);
     printf("Average number of friends: %f\n", (double)friendn/i);
     printf("Minimum friends: %d\n", minFriend);
     printf("Maximum number of friends: %d\n", maxFriend);
     printf("\n");
+    printf("Average tweets per user: %f\n", (double)wordNum/userNum);
+    printf("Minimum tweets per user: %d\n", minTweet);
+    printf("Maximum tweets per user: %d\n", maxTweet);
 }
 void readData(int userNum, int wordNum, Vertex* first) {
     Vertex* a;
@@ -437,6 +445,15 @@ void findFriend(Vertex* first, char id[10]) {
         b = b->next;
     }
     printf("%s\n", b->id);
+}
+void friendDelete(Vertex* first, char id[10]) {
+    Vertex* a = first;
+    Vertex* b = NULL;
+    while(a!=NULL) {
+        if(strcmp(a->id,id)==0) break;
+        else {b=a; a=a->next;}
+    }
+    b->next = a->next;
 }
 int hasFriend(Vertex* first, char me[10], char friend[10]) {
     Vertex* a;
@@ -575,6 +592,21 @@ RBTnode* find_word(RBTnode* wroot, char word[100]) {
         else x=x->right;
     }
     return x;
+}
+void tweetNumMaxMin(RBTnode* uroot, int* max, int* min){
+    RBTnode*x = uroot;
+    if(x!=NULL) {
+        if(x->superU->tweetNum>*max) {
+            *max = x->superU->tweetNum;
+        }
+        else if(x->superU->tweetNum<*min) {
+            *min = x->superU->tweetNum;
+            if(x->superU->tweetNum==1) printf("%s",x->key);
+        }
+        tweetNumMaxMin(x->left, max, min);
+        tweetNumMaxMin(x->right, max, min);
+    }
+    else ;
 }
 void top5TweetedUsers(int users[5], char usersid[5][10], RBTnode* uroot) {
     RBTnode* x = uroot;
@@ -723,7 +755,7 @@ int main(void)
         printf("\n");
         switch(i) {
         case 0: readData(userNum,tweetNum, first); break;
-        case 1: showStat(first); break;
+        case 1: showStat(first, userNum, tweetNum, uRoot); break;
         case 2: top5TweetedWords(words, tweetedWords, wRoot); printf("Top 5 most tweeted words: %s %s %s %s %s\n", tweetedWords[0], tweetedWords[1], tweetedWords[2], tweetedWords[3], tweetedWords[4]); break;
         case 3: top5TweetedUsers(users, usersid, uRoot); printf("Top 5 most tweeted users: %s %s %s %s %s\n",usersid[0],usersid[1],usersid[2],usersid[3],usersid[4]); break;
         case 4: printf("What word?: "); scanf("%s", word); idList = FindTweetedUsers(word,wRoot);
@@ -754,6 +786,12 @@ int main(void)
             else{
             mentioned = find_word(wRoot, word);
             RBdelete(wRoot, mentioned);
+            Adj* a = idList;
+            while(a!=NULL) {
+                mentioned = find_id(uRoot, a->id);
+                tweetNum -= mentioned->superU->tweetNum;
+                a=a->next;
+            }
             printf("Delete Complete\n");
             }
         break;
@@ -764,6 +802,8 @@ int main(void)
             while(a!=NULL) {
                 mentioned = find_id(uRoot, a->id);
                 RBdelete(uRoot, mentioned);
+                friendDelete(first, mentioned->superU->id);
+                userNum--;
                 a=a->next;
             }
             printf("Delete Complete\n");
