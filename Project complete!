@@ -667,7 +667,7 @@ void Interface() {
     printf("5. Find all people who are friends of above users\n");
     printf("6. Delete all mentions of a word\n");
     printf("7. Delete all users who mentioned a word\n");
-    printf("8. Find strongly connected components\n");
+    printf("8. Find every strongly connected components\n");
     //printf("9. Find shortest path from a given user\n");
     printf("99. Quit\n");
     printf("Select Menu: ");
@@ -694,7 +694,7 @@ int main(void)
     fb = fopen("user.txt","rt");
     if(fb==NULL) return 1;
     RBTnode *uRoot;
-    char charBuff[100];
+    char charBuff[300];
     int userNum = 0;
     uRoot = NULL;
     while(1) {
