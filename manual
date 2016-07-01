@@ -9,3 +9,4 @@ Manual
 2. 실행시 interface가 나오고 목록의 해당 숫자를 입력 하면 작동한다.
 3. 4,5,6,7은 순서대로 실행되어야 한다.
 4. 8번 strongly connected components는 모든 강연결 요소 를 출력한다.
+5. main의 charBuff의 배열 갯수는 word의 최대길이를 생각해서 정해야 한다.
