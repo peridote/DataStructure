@@ -10,3 +10,6 @@ Manual
 3. 4,5,6,7은 순서대로 실행되어야 한다.
 4. 8번 strongly connected components는 모든 강연결 요소 를 출력한다.
 5. main의 charBuff의 배열 갯수는 word의 최대길이를 생각해서 정해야 한다.
+6. delete 시 0번 1번 정보 변화함
+
+1번 보충- Code::blocks에서 디버그 모드로 break point없이 쭉 돌리면 돌아감. 일반 build시 안되는건 동적할당시 자리 부족 문제 인것으로 추정 
