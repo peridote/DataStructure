@@ -22,12 +22,23 @@ typedef struct utree{
     char* name;
     int tweetNum;
 }utree;
-
 typedef struct wtree{
     char* word;
-    char tweetdate[31];
-    char id[10];
+    struct Adj* idList;
 }wtree;
+typedef struct Adj {
+  char id[10];
+  struct Adj* next;
+} Adj;
+typedef struct {
+  int color;
+  int parent;
+  char id[10];
+  int n, d, f;
+  Adj* first;
+  struct Vertex* next;
+} Vertex;
+
 
 RBTnode* userRBT_init();
 RBTnode* RBinsert(RBTnode* root, RBTnode* z);
@@ -53,6 +64,8 @@ RBTnode* wordRBT_init() {
     a->right = NULL;
     a->parent = NULL;
     a->superW = (wtree*)malloc(sizeof(wtree));
+    a->superW->idList = (Adj*)malloc(sizeof(Adj));
+    a->superW->idList->next=NULL;
     a->superU = NULL;
     return a;
 }
@@ -64,6 +77,16 @@ RBTnode* RBinsert(RBTnode* root, RBTnode* z) {
     while(x!=NULL) {
         y=x;
         if(strcmp(z->key, x->key)<0) x=x->left;
+        else if(strcmp(z->key, x->key)==0) {
+                Adj* k = x->superW->idList;
+                Adj* a = (Adj*)malloc(sizeof(Adj));
+                a->next=NULL;
+                while(k->next!=NULL)
+                    k=k->next;
+                strcpy(a->id, z->superW->idList->id);
+                k->next = a;
+                return root;
+        }
         else x=x->right;
     }
     z->parent = y;
@@ -148,19 +171,7 @@ RBTnode* lRotate(RBTnode* root, RBTnode* x) {
     x->parent = y;
     return root;
 }
-typedef struct Adj {
-  char id[10];
-  struct Adj* next;
-} Adj;
 
-typedef struct {
-  int color;
-  int parent;
-  char id[10];
-  int n, d, f;
-  Adj* first;
-  struct Vertex* next;
-} Vertex;
 void Vertex_init(Vertex* self) {
   self->color = WHITE;
   self->parent = -1;
@@ -353,11 +364,11 @@ void strongComponent(Vertex* first, id_stack* stack) {
     char* temp;
     temp = pop(stack);
     strcpy(vertexId, temp);
-    free(temp);
+    //free(temp);
     while(!is_empty(stack)) {
     temp = pop(stack);
     strcpy(vertexRoute, temp);
-    free(temp);
+    //free(temp);
     printf("[%s",vertexId);
         while(!is_empty(stack)){
             if(hasFriend(first, vertexRoute, vertexId)==1) {
@@ -365,7 +376,7 @@ void strongComponent(Vertex* first, id_stack* stack) {
                 strcpy(vertexId, vertexRoute);
                 temp = pop(stack);
                 strcpy(vertexRoute, temp);
-                free(temp);
+                //free(temp);
             }
             else {
                 break;
@@ -445,7 +456,56 @@ void strongComponent(Vertex* first, id_stack* stack) {
      {free(s5->stack); free(s5);}
 
 }*/
+RBTnode* find_id(RBTnode* uroot, char id[10]) {
+    RBTnode* x= uroot;
+    while(x!=NULL) {
+        if(strcmp(x->superU->id,id)==0) break;
+        else if(strcmp(x->superU->id,id)>0) x=x->left;
+        else x=x->right;
+    }
+    return x;
+}
+void top5TweetedUsers(int users[5], char usersid[5][10], RBTnode* uroot) {
+    RBTnode* x = uroot;
+    if(x!=NULL) {
+        for(int i = 0;i<5;i++) {
+            if(x->superU->tweetNum>users[i]) {
+                    users[i]=x->superU->tweetNum;
+                    strcpy(usersid[i],x->superU->id);
+            break;
+                    }
+            else ;
+        }
+        top5TweetedUsers(users, usersid, x->left);
+        top5TweetedUsers(users, usersid, x->right);
+    }
+    else ;
 
+}
+void top5TweetedWords(int words[5], char tweetedWords[5][100], RBTnode* wroot) {
+    RBTnode* x = wroot;
+    int num = 1;
+    if(x!=NULL) {
+        Adj* a = x->superW->idList;
+        while(a->next!=NULL) {
+            num++; a=a->next;
+        }
+        for(int i=0;i<5;i++) {
+            if(num>words[i]) {
+                words[i]=num;
+                strcpy(tweetedWords[i],x->superW->word);
+            break;
+            }
+            else ;
+        }
+    top5TweetedWords(words, tweetedWords, x->left);
+    top5TweetedWords(words, tweetedWords, x->right);
+    }
+    else ;
+
+}
+void FindTweetedUsers() {
+}
 void Interface() {
     printf("\n");
     printf("0. Read data files\n");
@@ -507,7 +567,7 @@ int main(void)
     fclose(fb);
     fb = fopen("word.txt","rt");
     if(fb==NULL) return 1;
-    RBTnode *wRoot;
+    RBTnode *wRoot, *ur;
     int tweetNum=0;
     wRoot = NULL;
     while(1) {
@@ -517,9 +577,8 @@ int main(void)
     word = wordRBT_init();
     word->color = RED;
     fscanf(fb, "%s\n", charBuff);
-    strcpy(word->superW->id, charBuff);
+    strcpy(word->superW->idList->id, charBuff);
     fgets(charBuff, 33, fb); charBuff[30]='\0';
-    strcpy(word->superW->tweetdate, charBuff);
     fscanf(fb, "%s\n", charBuff);
     word->superW->word = (char*)malloc(sizeof(char)*strlen(charBuff));
     strcpy(word->superW->word, charBuff);
@@ -527,17 +586,23 @@ int main(void)
     strcpy(word->key, word->superW->word);
     wRoot = RBinsert(wRoot, word);
     tweetNum++;
+    ur = find_id(uRoot, word->superW->idList->id);
+    ur->superU->tweetNum += 1;
     }
     fclose(fb);
     while(programOn){
         int i;
+        int users[5], words[5];
+        char usersid[5][10], tweetedWords[5][100];
+        for(i=0;i<5;i++) {users[i]=0; words[i]=0;}
         Interface();
         scanf("%d",&i);
+        printf("\n");
         switch(i) {
         case 0: readData(userNum,tweetNum, first); break;
         case 1: showStat(first); break;
-        case 2: break;
-        case 3: break;
+        case 2: top5TweetedWords(words, tweetedWords, wRoot); printf("Top 5 most tweeted words: %s %s %s %s %s\n", tweetedWords[0], tweetedWords[1], tweetedWords[2], tweetedWords[3], tweetedWords[4]); break;
+        case 3: top5TweetedUsers(users, usersid, uRoot); printf("Top 5 most tweeted users: %s %s %s %s %s\n",usersid[0],usersid[1],usersid[2],usersid[3],usersid[4]); break;
         case 4: break;
         case 5: break;
         case 6: break;
